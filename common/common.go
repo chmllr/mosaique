@@ -1,6 +1,10 @@
 package common
 
-import "image"
+import (
+	"fmt"
+	"image"
+	"os"
+)
 
 // AverageColorFromBounds returns the average color for the given rectangle
 func AverageColorFromBounds(m image.Image, bounds image.Rectangle) (uint, uint, uint, uint, error) {
@@ -16,4 +20,19 @@ func AverageColorFromBounds(m image.Image, bounds image.Rectangle) (uint, uint, 
 		}
 	}
 	return uint(r / size), uint(g / size), uint(b / size), uint(a / size), nil
+}
+
+// ReadImage reads data from file and decodes it to an image
+func ReadImage(path string) (image.Image, error) {
+	fmt.Println("Reading", path)
+	reader, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	m, _, err := image.Decode(reader)
+	if err != nil {
+		return nil, fmt.Errorf("decoding failed: %v", err)
+	}
+	return m, nil
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"image"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -55,15 +54,9 @@ func fetch(path string) (list []string, err error) {
 }
 
 func averageColor(path string) (uint, uint, uint, uint, error) {
-	reader, err := os.Open(path)
+	m, err := common.ReadImage(path)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	defer reader.Close()
-	m, _, err := image.Decode(reader)
-	if err != nil {
-		return 0, 0, 0, 0, fmt.Errorf("decoding failed: %v", err)
-	}
-	fmt.Println("Reading", path)
 	return common.AverageColorFromBounds(m, m.Bounds())
 }
