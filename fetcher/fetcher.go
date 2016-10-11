@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"../common"
 )
 
 import _ "image/jpeg"
@@ -42,7 +44,7 @@ func fetch(path string) (list []string, err error) {
 		if !strings.HasSuffix(info.Name(), ".jpg") {
 			return nil
 		}
-		r, g, b, a, err := getAVGColor(path)
+		r, g, b, a, err := averageColor(path)
 		if err != nil {
 			return fmt.Errorf("couldn't extract colors from '%v': %v", path, err)
 		}
@@ -52,7 +54,7 @@ func fetch(path string) (list []string, err error) {
 	return list, err
 }
 
-func getAVGColor(path string) (uint, uint, uint, uint, error) {
+func averageColor(path string) (uint, uint, uint, uint, error) {
 	reader, err := os.Open(path)
 	if err != nil {
 		return 0, 0, 0, 0, err
@@ -62,18 +64,6 @@ func getAVGColor(path string) (uint, uint, uint, uint, error) {
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("decoding failed: %v", err)
 	}
-	bounds := m.Bounds()
-	size := uint64((bounds.Max.X - bounds.Min.X) * (bounds.Max.Y - bounds.Min.Y))
-	fmt.Println("Reading", path, "with size", size)
-	var r, g, b, a uint64
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			r32, g32, b32, a32 := m.At(x, y).RGBA()
-			r += uint64(r32)
-			g += uint64(g32)
-			b += uint64(b32)
-			a += uint64(a32)
-		}
-	}
-	return uint(r / size), uint(g / size), uint(b / size), uint(a / size), nil
+	fmt.Println("Reading", path)
+	return common.AverageColorFromBounds(m, m.Bounds())
 }
