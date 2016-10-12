@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"image"
 	"os"
+
+	_ "image/jpeg"
 )
 
 // AverageColorFromBounds returns the average color for the given rectangle
@@ -24,7 +26,6 @@ func AverageColorFromBounds(m image.Image, bounds image.Rectangle) (uint, uint, 
 
 // ReadImage reads data from file and decodes it to an image
 func ReadImage(path string) (image.Image, error) {
-	fmt.Println("Reading", path)
 	reader, err := os.Open(path)
 	if err != nil {
 		return nil, err

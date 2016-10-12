@@ -5,15 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"../common"
-
-	_ "image/jpeg"
 )
-
-import _ "image/gif"
 
 func main() {
 	var arg string
@@ -24,15 +21,17 @@ func main() {
 	case "", "-h", "--help":
 		fmt.Println("Usage: fetcher <PATH_TO_PHOTO_FOLDER>")
 	default:
+		fmt.Println("Scanning path", arg)
 		start := time.Now()
 		colorsFile := filepath.Join(arg, "colors.txt")
 		if files, err := fetchFileList(arg); err == nil {
+			fmt.Println(len(files), "files found")
 			if list, err := fetchColors(files); err == nil {
 				data := []byte(strings.Join(list, "\n"))
 				if err := ioutil.WriteFile(colorsFile, data, 0644); err != nil {
 					fmt.Println("Couldn't write file:", err)
 				}
-				fmt.Printf("\nPicture colors fetched and dumped to %s (%v)\n", colorsFile, time.Since(start))
+				fmt.Printf("Picture colors fetched and dumped to %s (%v)\n", colorsFile, time.Since(start))
 			} else {
 				fmt.Println("Couldn't fetch colors:", err)
 			}
@@ -44,34 +43,51 @@ func main() {
 
 func fetchFileList(path string) (list []string, err error) {
 	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+		if strings.HasSuffix(strings.ToLower(path), ".jpg") {
+			list = append(list, path)
 		}
-		// ignore non-jpg's
-		if !strings.HasSuffix(info.Name(), ".jpg") {
-			return nil
-		}
-		list = append(list, path)
-		return nil
+		return err
 	})
 	return list, err
 }
 
+type entry struct {
+	R    uint
+	G    uint
+	B    uint
+	A    uint
+	Path string
+}
+
 func fetchColors(files []string) (list []string, err error) {
-	for _, path := range files {
-		r, g, b, a, err := averageColor(path)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't extract colors from '%v': %v", path, err)
-		}
-		list = append(list, path, fmt.Sprintf("%v %v %v %v", r, g, b, a))
+	results := make(chan *entry)
+	cpus := runtime.NumCPU()
+	fmt.Println("Starting", cpus, "concurrent routines")
+	for cpu := 0; cpu < cpus; cpu++ {
+		go func(index int) {
+			fmt.Println("Routine", index, "started...")
+			for i := index; i < len(files); i += cpus {
+				if entry, err := averageColor(files[i]); err == nil {
+					results <- entry
+				} else {
+					fmt.Println("Error: couldn't get colors from", files[i])
+				}
+			}
+		}(cpu)
 	}
+	for range files {
+		c := <-results
+		list = append(list, c.Path, fmt.Sprintf("%v %v %v %v", c.R, c.G, c.B, c.A))
+	}
+	close(results)
 	return list, err
 }
 
-func averageColor(path string) (uint, uint, uint, uint, error) {
+func averageColor(path string) (*entry, error) {
 	m, err := common.ReadImage(path)
 	if err != nil {
-		return 0, 0, 0, 0, err
+		return nil, err
 	}
-	return common.AverageColorFromBounds(m, m.Bounds())
+	r, g, b, a, err := common.AverageColorFromBounds(m, m.Bounds())
+	return &entry{R: r, G: g, B: b, A: a, Path: path}, err
 }
