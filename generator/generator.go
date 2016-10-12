@@ -60,7 +60,7 @@ func main() {
 	}
 }
 
-func createMosaique(orig image.Image, colors []*common.Entry) (image.Image, error) {
+func createMosaique(orig image.Image, colors []*common.Color) (image.Image, error) {
 	bounds := orig.Bounds()
 	mos := image.NewRGBA(bounds)
 	cpus := runtime.NumCPU()
@@ -92,11 +92,11 @@ func createMosaique(orig image.Image, colors []*common.Entry) (image.Image, erro
 	return mos, nil
 }
 
-func findClosestTile(colors []*common.Entry, r, g, b, a uint16) *common.Entry {
-	var res *common.Entry
+func findClosestTile(colors []*common.Color, r, g, b, a uint16) *common.Color {
+	var res *common.Color
 	minDist := uint64(math.MaxUint64)
 	for _, e := range colors {
-		dist := getDist(r, g, b, a, e)
+		dist := sqDiff(r, e.R) + sqDiff(g, e.G) + sqDiff(b, e.B)
 		if dist < minDist {
 			minDist = dist
 			res = e
@@ -108,10 +108,6 @@ func findClosestTile(colors []*common.Entry, r, g, b, a uint16) *common.Entry {
 	return res
 }
 
-func getDist(r, g, b, a uint16, e *common.Entry) uint64 {
-	return sqDiff(r, e.R) + sqDiff(g, e.G) + sqDiff(b, e.B)
-}
-
 func sqDiff(a, b uint16) uint64 {
 	if a < b {
 		a, b = b, a
@@ -120,12 +116,12 @@ func sqDiff(a, b uint16) uint64 {
 	return diff * diff
 }
 
-func makeColorVectors(path string) ([]*common.Entry, error) {
+func makeColorVectors(path string) ([]*common.Color, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	res := []*common.Entry{}
+	res := []*common.Color{}
 	lines := strings.Split(string(data), "\n")
 	for i := 0; i < len(lines)-1; i += 2 {
 		colors := strings.Split(lines[i+1], " ")
@@ -133,7 +129,7 @@ func makeColorVectors(path string) ([]*common.Entry, error) {
 		g, _ := strconv.Atoi(colors[1])
 		b, _ := strconv.Atoi(colors[2])
 		a, _ := strconv.Atoi(colors[3])
-		res = append(res, &common.Entry{Path: lines[i], R: uint16(r), G: uint16(g), B: uint16(b), A: uint16(a)})
+		res = append(res, &common.Color{Path: lines[i], R: uint16(r), G: uint16(g), B: uint16(b), A: uint16(a)})
 	}
 	return res, nil
 }
