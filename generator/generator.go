@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"../common"
@@ -64,8 +65,9 @@ func createMosaique(orig image.Image, colors []*common.Color) (image.Image, erro
 	bounds := orig.Bounds()
 	mos := image.NewRGBA(bounds)
 	cpus := runtime.NumCPU()
-	acks := make(chan bool)
+	var wg sync.WaitGroup
 	for cpu := 0; cpu < cpus; cpu++ {
+		wg.Add(1)
 		go func(cpu, cpus int) {
 			for x := bounds.Min.X + cpu*tileSize; x < bounds.Max.X; x += cpus * tileSize {
 				for y := bounds.Min.Y; y < bounds.Max.Y-tileSize; y += tileSize {
@@ -82,13 +84,10 @@ func createMosaique(orig image.Image, colors []*common.Color) (image.Image, erro
 					draw.Draw(mos, tileHolder, tile, image.ZP, draw.Src)
 				}
 			}
-			acks <- true
+			wg.Done()
 		}(cpu, cpus)
 	}
-	for cpus > 0 {
-		<-acks
-		cpus--
-	}
+	wg.Wait()
 	return mos, nil
 }
 
