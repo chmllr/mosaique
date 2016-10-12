@@ -52,10 +52,10 @@ func fetchFileList(path string) (list []string, err error) {
 }
 
 type entry struct {
-	R    uint
-	G    uint
-	B    uint
-	A    uint
+	R    uint16
+	G    uint16
+	B    uint16
+	A    uint16
 	Path string
 }
 

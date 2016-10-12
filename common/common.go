@@ -9,8 +9,8 @@ import (
 )
 
 // AverageColorFromBounds returns the average color for the given rectangle
-func AverageColorFromBounds(m image.Image, bounds image.Rectangle) (uint, uint, uint, uint, error) {
-	size := uint64((bounds.Max.X - bounds.Min.X) * (bounds.Max.Y - bounds.Min.Y))
+func AverageColorFromBounds(m image.Image, bounds image.Rectangle) (uint16, uint16, uint16, uint16, error) {
+	size := uint64(bounds.Dx() * bounds.Dy())
 	var r, g, b, a uint64
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -21,7 +21,7 @@ func AverageColorFromBounds(m image.Image, bounds image.Rectangle) (uint, uint, 
 			a += uint64(a32)
 		}
 	}
-	return uint(r / size), uint(g / size), uint(b / size), uint(a / size), nil
+	return uint16(r / size), uint16(g / size), uint16(b / size), uint16(a / size), nil
 }
 
 // ReadImage reads data from file and decodes it to an image
