@@ -97,7 +97,7 @@ func findClosestTile(colors []*common.Entry, r, g, b, a uint16) *common.Entry {
 }
 
 func getDist(r, g, b, a uint16, e *common.Entry) uint64 {
-	return p2(r-e.R) + p2(g-e.G) + p2(b-e.B) + p2(a-e.A)
+	return p2(r-e.R) + p2(g-e.G) + p2(b-e.B)
 }
 
 func p2(a uint16) uint64 { return uint64(a) * uint64(a) }
