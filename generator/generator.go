@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -62,20 +63,31 @@ func main() {
 func createMosaique(orig image.Image, colors []*common.Entry) (image.Image, error) {
 	bounds := orig.Bounds()
 	mos := image.NewRGBA(bounds)
-	for x := bounds.Min.X; x < bounds.Max.X-tileSize; x += tileSize {
-		for y := bounds.Min.Y; y < bounds.Max.Y-tileSize; y += tileSize {
-			tileHolder := image.Rect(x, y, x+tileSize, y+tileSize)
-			r, g, b, a, err := common.AverageColorFromBounds(orig, tileHolder)
-			if err != nil {
-				return nil, err
+	cpus := runtime.NumCPU()
+	acks := make(chan bool)
+	for cpu := 0; cpu < cpus; cpu++ {
+		go func(cpu, cpus int) {
+			for x := bounds.Min.X + cpu*tileSize; x < bounds.Max.X; x += cpus * tileSize {
+				for y := bounds.Min.Y; y < bounds.Max.Y-tileSize; y += tileSize {
+					tileHolder := image.Rect(x, y, x+tileSize, y+tileSize)
+					r, g, b, a, err := common.AverageColorFromBounds(orig, tileHolder)
+					if err != nil {
+						return
+					}
+					closestTile := findClosestTile(colors, r, g, b, a)
+					tile, err := common.ReadImage(closestTile.Path)
+					if err != nil {
+						return
+					}
+					draw.Draw(mos, tileHolder, tile, image.ZP, draw.Src)
+				}
 			}
-			closestTile := findClosestTile(colors, r, g, b, a)
-			tile, err := common.ReadImage(closestTile.Path)
-			if err != nil {
-				return nil, err
-			}
-			draw.Draw(mos, tileHolder, tile, image.ZP, draw.Src)
-		}
+			acks <- true
+		}(cpu, cpus)
+	}
+	for cpus > 0 {
+		<-acks
+		cpus--
 	}
 	return mos, nil
 }
