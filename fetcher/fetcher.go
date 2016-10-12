@@ -23,7 +23,7 @@ func main() {
 	default:
 		fmt.Println("Scanning path", arg)
 		start := time.Now()
-		colorsFile := filepath.Join(arg, "colors.txt")
+		colorsFile := "colors.txt"
 		if files, err := fetchFileList(arg); err == nil {
 			fmt.Println(len(files), "files found")
 			if list, err := fetchColors(files); err == nil {

@@ -2,3 +2,5 @@ fetcher/colors.txt
 fetcher/fetcher
 generator/generator
 data/
+colors.txt
+bin/
