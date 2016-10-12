@@ -37,3 +37,12 @@ func ReadImage(path string) (image.Image, error) {
 	}
 	return m, nil
 }
+
+// Entry is the average color of a picture in Path
+type Entry struct {
+	R    uint16
+	G    uint16
+	B    uint16
+	A    uint16
+	Path string
+}

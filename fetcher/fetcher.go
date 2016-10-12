@@ -51,16 +51,8 @@ func fetchFileList(path string) (list []string, err error) {
 	return list, err
 }
 
-type entry struct {
-	R    uint16
-	G    uint16
-	B    uint16
-	A    uint16
-	Path string
-}
-
 func fetchColors(files []string) (list []string, err error) {
-	results := make(chan *entry)
+	results := make(chan *common.Entry)
 	cpus := runtime.NumCPU()
 	fmt.Println("Starting", cpus, "concurrent routines")
 	for cpu := 0; cpu < cpus; cpu++ {
@@ -83,11 +75,11 @@ func fetchColors(files []string) (list []string, err error) {
 	return list, err
 }
 
-func averageColor(path string) (*entry, error) {
+func averageColor(path string) (*common.Entry, error) {
 	m, err := common.ReadImage(path)
 	if err != nil {
 		return nil, err
 	}
 	r, g, b, a, err := common.AverageColorFromBounds(m, m.Bounds())
-	return &entry{R: r, G: g, B: b, A: a, Path: path}, err
+	return &common.Entry{R: r, G: g, B: b, A: a, Path: path}, err
 }
